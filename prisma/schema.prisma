@@ -1,0 +1,158 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  COMERCIAL
+  POSTVENTA
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+model User {
+  id        Int         @id @default(autoincrement())
+  firstName String      @db.VarChar(100)
+  lastName  String      @db.VarChar(100)
+  email     String      @unique @db.VarChar(255)
+  password  String      @db.VarChar(255)
+  role      UserRole    
+  status    UserStatus  @default(ACTIVE)
+
+  // Campos de auditoría
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
+
+  refreshTokens RefreshToken[]
+  
+  @@map("users")
+  @@index([status]) 
+}
+
+model RefreshToken {
+  id            Int      @id @default(autoincrement())
+  token         String   @unique @db.Text
+  expiresAt     DateTime @map("expires_at")
+  revoked       Boolean  @default(false)
+  
+  // Campos de auditoría
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  
+  // Campos adicionales de seguridad
+  ipAddress     String?   @db.VarChar(45) @map("ip_address") // IPv4/IPv6
+  userAgent     String?   @db.Text @map("user_agent")
+  revokedAt     DateTime? @map("revoked_at")
+  revokedBy     Int?      @map("revoked_by") // ID del admin que revocó (opcional)
+  
+  // Relación con User
+  userId Int  @map("user_id")
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("refresh_tokens")
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@index([revoked])
+}
+
+enum BondStatus {
+  RENEWED       // Renovada
+  NOT_RENEWED   // No renovada
+  CANCELED      // Anulada
+}
+
+model Bond {  // Fianza
+  id                 Int        @id @default(autoincrement())
+  month              String     @db.VarChar(50)                           // Mes
+  bondNumber         String     @db.VarChar(255) @map("bond_number")      // Nº de Fianza
+  status             BondStatus @default(NOT_RENEWED)                     // Estado de la fianza (enum)
+  issueDate          DateTime   @map("issue_date")                        // Fecha de Emisión
+  expirationDate     DateTime   @map("expiration_date")                   // Fecha de Vencimiento
+  entityName         String     @db.VarChar(255) @map("entity_name")      // Nombre de la Entidad del proceso
+  insurer            String     @db.VarChar(255)                          // Nombre de la aseguradora
+  bondType           String     @db.VarChar(100) @map("bond_type")        // Tipo de Fianza
+  bondAmount         Decimal    @db.Decimal(15,2) @map("bond_amount")     // Importe/Monto de Fianza
+  projectDescription String     @db.Text @map("project_description")      // Descripción de la obra
+  company            String     @db.VarChar(255)                          // Empresa
+  consortium         String     @db.VarChar(255)                          // Consorcio
+  financialEntity    String     @db.VarChar(255) @map("financial_entity") // Entidad Financiera
+  contactName        String     @db.VarChar(255) @map("contact_name")     // Contacto
+  phone              String     @db.VarChar(50)                           // Teléfono
+  email              String     @db.VarChar(255)                          // Correo
+  executive          String     @db.VarChar(255)                          // Ejecutiv@ comercial
+  note               String     @db.Text                                  // Nota
+  premium            Decimal    @db.Decimal(15,2)                         // Prima
+  invoiceDueDate     DateTime   @map("invoice_due_date")                  // Vencimiento Factura
+  bondNature         String     @db.VarChar(50) @map("bond_nature")       // Nueva o Renovación
+
+  // Campos de auditoría
+  createdAt          DateTime   @default(now()) @map("created_at") 
+  updatedAt          DateTime   @updatedAt @map("updated_at")
+
+  @@map("bonds")
+  @@index([status])
+  @@index([company])
+  @@index([bondNumber])
+}
+
+enum CheckStatus {
+  REPLACEMENT   // Sustitución
+  COLLECTED     // Cobrado
+  CANCELLED     // Anulado
+  EXTENDED      // Prórroga
+  PENDING       // Pendiente (en espera)
+}
+
+model Check { // Cheque
+  id              Int           @id @default(autoincrement())
+  entryDate       DateTime      @map("entry_date")                      // Fecha de ingreso
+  checkNumber     String        @db.VarChar(100) @map("check_number")   // Número de cheque
+  bondNumber      String        @db.VarChar(255) @map("bond_number")    // Nº de Fianza
+  bondType        String        @db.VarChar(100) @map("bond_type")      // Tipo de fianza
+  amount          Decimal       @db.Decimal(15,2) @map("amount")        // Importe/Monto
+  expirationDate  DateTime      @map("expiration_date")                 // Fecha de vencimiento
+  company         String        @db.VarChar(255) @map("company")        // Empresa/Consorcio
+  bank            String        @db.VarChar(255) @map("bank")           // Banco
+  insurer         String        @db.VarChar(255) @map("insurer")        // Aseguradora
+  status          CheckStatus   @default(PENDING)                       // Estado del cheque (enum)
+
+  // Campos de auditoría
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@map("checks")
+  @@index([status])
+  @@index([company])
+}
+
+
+model Release { // Liberación 
+  id                Int       @id @default(autoincrement())
+  presentationDate  DateTime  @map("presentation_date")               // Fecha de presentación
+  policyNumber      String    @map("policy_number")                   // Número de póliza
+  refundAmount      Decimal   @db.Decimal(15,2) @map("refund_amount") // Monto devolución
+  bondType          String    @map("bond_type")                       // Tipo de fianza
+  applicant         String    @db.VarChar(255)                        // Solicitante
+  companyConsortium String    @map("company_consortium")              // Empresa / Consorcio
+  refundDate        DateTime  @map("refund_date")                     // Fecha de devolución
+  insurer           String    @db.VarChar(255)                        // Aseguradora
+  notes             String    @db.Text                                // Comentarios / Notas
+
+  // Campos de auditoría
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  @@map("releases")
+  @@index([policyNumber])
+  @@index([companyConsortium])
+}
