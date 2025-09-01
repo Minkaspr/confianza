@@ -17,7 +17,7 @@ import { UserService } from './user.service';
 import { CreateUserRq } from './request/user-create-rq';
 import { UpdateUserRq } from './request/user-update-rq';
 import { ChangeUserStatusRq } from './request/change-status-rq';
-import { ApiResponse } from 'src/common/interfaces/api-response.interface';
+import { ApiResponse } from '../common/interfaces/api-response.interface';
 import { UsersRs } from './response/users-rs';
 import { UserDetailRs } from './response/user-detail-rs';
 

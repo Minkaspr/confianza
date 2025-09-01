@@ -11,7 +11,7 @@ import { AuthService } from './auth.service';
 import { LoginRq, RefreshTokenRq } from './request/login-rq';
 import { LoginRs } from './response/login-rs';
 import type { Request } from 'express';
-import { ApiResponse } from 'src/common/interfaces/api-response.interface';
+import { ApiResponse } from '../common/interfaces/api-response.interface';
 
 @Controller('auth')
 export class AuthController {

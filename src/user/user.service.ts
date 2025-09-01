@@ -2,10 +2,9 @@ import { Injectable } from '@nestjs/common';
 import {
   DuplicateResourceException,
   ResourceNotFoundException,
-} from 'src/common/exceptions/base.exception';
+} from '../common/exceptions/base.exception';
 import { CreateUserRq } from './request/user-create-rq';
 import { UpdateUserRq } from './request/user-update-rq';
-
 import * as bcrypt from 'bcrypt';
 import { UserStatus } from '@prisma/client';
 import { UserMapper } from './mapper/user.mapper';
